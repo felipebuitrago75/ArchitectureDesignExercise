@@ -93,7 +93,9 @@ With 800,000 legacy engagements trapped in unqueryable blobs and no maintenance 
 ### 3.2 The Decoupled Staff Solution: $O(1)$ Publish + $O(1)$ Dashboard Query
 1. **On Template Publish ($O(1)$ compute):** TSS generates the JSON diff and LLM summary **once** for the updated template in **< 5 seconds**.
 2. **On Dashboard View ($O(1)$ read):** Client queries the regional EMI:
-   $$\text{Pending Update} = (\text{template\_head} > \text{engagement.version}) \land (\text{template\_head} \notin \text{engagement.declined\_versions})$$
+   ```math
+   \text{Pending Update} = (\text{template\_head} > \text{engagement.version}) \land (\text{template\_head} \notin \text{engagement.declined\_versions})
+   ```
    Execution time: **< 8 milliseconds** via indexed B-Tree on `(firm_id, product_id)`.
 
 ### 3.3 Data Footprint & Financial Run Cost Breakdown
@@ -149,7 +151,7 @@ With 800,000 legacy engagements trapped in unqueryable blobs and no maintenance 
   2. *Vector Databases / RAG:* Structured JSON schema deltas do not benefit from semantic vector search; vector embeddings introduce hallucination risks without value.
 
 ### 5.4 Observability & SLOs
-* **SLOs:** Dashboard indicator latency $p99 < 50\text{ ms}$; Template summary generation $p99 < 15\text{ s}$; Downstream error rate $< 0.1\%$.
+* **SLOs:** Dashboard indicator latency $p99 < 50\text{ ms}$; Template summary generation $p99 < 15\text{ s}$; Downstream error rate < 0.1%.
 * **Observability:** Distributed tracing (W3C `traceparent`) across SQS and downstream calls; CloudWatch alarms trip circuit breakers if downstream 5xx errors exceed 25% over 2 minutes.
 
 ---
