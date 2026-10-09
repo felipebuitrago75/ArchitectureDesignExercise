@@ -17,8 +17,10 @@ flowchart TB
         
         PTS -->|Publish Event| EB["Amazon EventBridge (Global Bus)"]
         
+        EB --> TSS["Template Summary Service (TSS)"]
+
         subgraph SummaryPipeline["Deterministic Summary Pipeline"]
-            EB --> TSS["Template Summary Service (TSS)"]
+            TSS
             TSS -->|Normalize JSON Diff| DN["Diff Normalizer"]
             DN -->|Deterministic Prompt Temp: 0.0| LLM["Bedrock / Claude 3.5 Sonnet"]
             LLM -->|Verify vs Source Diff| HF["Hallucination & Fact Checker"]
@@ -41,6 +43,7 @@ flowchart TB
             EMI[("Engagement Metadata Index (EMI)\nAurora Serverless v2 (< 200 MB/region)")]
             EMS["Downstream Engagement Pods (~1 min)\n(Hydrates In-Memory Volatile Models)"]
             TDB[("Customer Engagement Blob DBs\n(Client-Confidential Audit Material)")]
+            AUDIT[("Append-Only Decision Ledger")]
         end
 
         RFW -->|Update Version Pointers| EMI
@@ -50,11 +53,11 @@ flowchart TB
     end
 
     subgraph ClientLayer["Auditor Web Application"]
-        Auditor["CPA / Audit Senior"] -->|1. Load Dashboard (< 10 ms)| API["Regional GraphQL / REST API"]
-        API -->|O(1) Indexed Query| EMI
+        Auditor["CPA / Audit Senior"] -->|"1. Load Dashboard (< 10 ms)"| API["Regional GraphQL / REST API"]
+        API -->|"O(1) Indexed Query"| EMI
         Auditor -->|2. Inspect Pending Summary| S3W
         Auditor -->|3. Accept or Decline| EMS
-        EMS -->|Record SHA-256 Decision Snapshot| AUDIT[("Append-Only Decision Ledger")]
+        EMS -->|Record SHA-256 Decision Snapshot| AUDIT
     end
 ```
 
@@ -74,7 +77,7 @@ gitGraph
    commit id: "v1.1-US (AICPA Standard)"
    commit id: "v1.2-US (Declined by Firm A)"
    commit id: "v1.3-US (Withdrawn)" type: REVERSE
-   commit id: "v1.4-US (Offered to Firm A with Cumulative Summary v1.1->v1.4)"
+   commit id: "v1.4-US (Offered to Firm A with Cumulative Summary v1.1 to v1.4)"
 ```
 
 ### Cumulative Summary Flow for Skipped / Declined Updates
