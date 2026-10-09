@@ -93,10 +93,12 @@ With 800,000 legacy engagements trapped in unqueryable blobs and no maintenance 
 ### 3.2 The Decoupled Staff Solution: $O(1)$ Publish + $O(1)$ Dashboard Query
 1. **On Template Publish ($O(1)$ compute):** TSS generates the JSON diff and LLM summary **once** for the updated template in **< 5 seconds**.
 2. **On Dashboard View ($O(1)$ read):** Client queries the regional EMI:
-   ```math
-   \text{Pending Update} = (\text{template\_head} > \text{engagement.version}) \land (\text{template\_head} \notin \text{engagement.declined\_versions})
-   ```
-   Execution time: **< 8 milliseconds** via indexed B-Tree on `(firm_id, product_id)`.
+
+```math
+\text{Pending Update} = (\text{template\_head} > \text{engagement.version}) \land (\text{template\_head} \notin \text{engagement.declined\_versions})
+```
+
+Execution time: **< 8 milliseconds** via indexed B-Tree on `(firm_id, product_id)`.
 
 ### 3.3 Data Footprint & Financial Run Cost Breakdown
 
