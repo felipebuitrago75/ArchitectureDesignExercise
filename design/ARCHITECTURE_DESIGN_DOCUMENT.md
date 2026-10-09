@@ -102,7 +102,7 @@ Execution time: **< 8 milliseconds** via indexed B-Tree on `(firm_id, product_id
 
 ### 3.3 Data Footprint & Financial Run Cost Breakdown
 
-* **EMI Storage Arithmetic:** 800,000 rows $\times$ ~250 bytes $\approx \mathbf{201.6\text{ MB}}$ total ($< 85\text{ MB}$ per region). Fits entirely in RAM.
+* **EMI Storage Arithmetic:** 800,000 rows $\times$ ~250 bytes $\approx \mathbf{201.6\text{ MB}}$ total ($\lt 85\text{ MB}$ per region). Fits entirely in RAM.
 
 | Component | Usage / Metric | Monthly Cost |
 | :--- | :--- | :--- |
@@ -153,7 +153,7 @@ Execution time: **< 8 milliseconds** via indexed B-Tree on `(firm_id, product_id
   2. *Vector Databases / RAG:* Structured JSON schema deltas do not benefit from semantic vector search; vector embeddings introduce hallucination risks without value.
 
 ### 5.4 Observability & SLOs
-* **SLOs:** Dashboard indicator latency $p99 < 50\text{ ms}$; Template summary generation $p99 < 15\text{ s}$; Downstream error rate < 0.1%.
+* **SLOs:** Dashboard indicator latency $p99 \lt 50\text{ ms}$; Template summary generation $p99 \lt 15\text{ s}$; Downstream error rate < 0.1%.
 * **Observability:** Distributed tracing (W3C `traceparent`) across SQS and downstream calls; CloudWatch alarms trip circuit breakers if downstream 5xx errors exceed 25% over 2 minutes.
 
 ---
