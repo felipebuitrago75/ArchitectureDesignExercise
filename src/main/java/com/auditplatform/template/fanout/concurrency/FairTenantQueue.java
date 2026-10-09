@@ -43,13 +43,20 @@ public class FairTenantQueue {
         totalSize.incrementAndGet();
     }
 
+    /**
+     * Polls the next fair batch of tasks across tenants.
+     * Fixed: Prevents IndexOutOfBoundsException when a tenant queue is drained and removed mid-batch.
+     */
     public synchronized List<EngagementReference> pollFairBatch(int maxBatchSize) {
         List<EngagementReference> batch = new ArrayList<>();
         if (activeTenantOrder.isEmpty() || maxBatchSize <= 0) {
             return batch;
         }
 
-        while (batch.size() < maxBatchSize && !activeTenantOrder.isEmpty()) {
+        int iterations = 0;
+        int tenantsCount = activeTenantOrder.size();
+
+        while (batch.size() < maxBatchSize && !activeTenantOrder.isEmpty() && iterations < tenantsCount * 2) {
             if (currentTenantIndex >= activeTenantOrder.size()) {
                 currentTenantIndex = 0;
             }
@@ -57,24 +64,24 @@ public class FairTenantQueue {
             String currentFirmId = activeTenantOrder.get(currentTenantIndex);
             Queue<EngagementReference> firmQueue = tenantQueues.get(currentFirmId);
 
-            int polled = 0;
-            while (polled < quantumPerTurn && batch.size() < maxBatchSize && firmQueue != null && !firmQueue.isEmpty()) {
+            int polledForThisTenant = 0;
+            while (polledForThisTenant < quantumPerTurn && batch.size() < maxBatchSize && firmQueue != null && !firmQueue.isEmpty()) {
                 EngagementReference item = firmQueue.poll();
                 if (item != null) {
                     batch.add(item);
                     totalSize.decrementAndGet();
-                    polled++;
+                    polledForThisTenant++;
                 }
             }
 
-            // Note: If firm drained, remove tenant
             if (firmQueue == null || firmQueue.isEmpty()) {
                 tenantQueues.remove(currentFirmId);
                 activeTenantOrder.remove(currentTenantIndex);
-                // Potential edge case: if currentTenantIndex was at last index, next access can index-wrap without bounds check
+                // Do not increment currentTenantIndex because removal shifts subsequent elements left
             } else {
                 currentTenantIndex++;
             }
+            iterations++;
         }
 
         return batch;

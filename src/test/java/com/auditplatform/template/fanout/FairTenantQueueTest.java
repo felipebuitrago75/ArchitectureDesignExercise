@@ -18,17 +18,14 @@ class FairTenantQueueTest {
     void shouldInterleaveTenantsFairly() {
         FairTenantQueue queue = new FairTenantQueue(2); // Quantum = 2
 
-        // Firm A (Enterprise) has 20 engagements
         for (int i = 1; i <= 20; i++) {
             queue.enqueue(new EngagementReference("eng-A-" + i, "firm-A", "prod-1", "temp-1", "v1.0", "US", Set.of()));
         }
 
-        // Firm B (Median) has 2 engagements
         for (int i = 1; i <= 2; i++) {
             queue.enqueue(new EngagementReference("eng-B-" + i, "firm-B", "prod-1", "temp-1", "v1.0", "US", Set.of()));
         }
 
-        // Firm C (Median) has 2 engagements
         for (int i = 1; i <= 2; i++) {
             queue.enqueue(new EngagementReference("eng-C-" + i, "firm-C", "prod-1", "temp-1", "v1.0", "US", Set.of()));
         }
@@ -46,5 +43,38 @@ class FairTenantQueueTest {
         assertThat(fromA).isEqualTo(2);
         assertThat(fromB).isEqualTo(2);
         assertThat(fromC).isEqualTo(2);
+
+        assertThat(queue.getActiveTenantCount()).isEqualTo(1);
+        assertThat(queue.size()).isEqualTo(18);
+
+        List<EngagementReference> remaining = new ArrayList<>();
+        while (!queue.isEmpty()) {
+            remaining.addAll(queue.pollFairBatch(10));
+        }
+
+        assertThat(remaining).hasSize(18);
+        assertThat(remaining).allMatch(e -> e.firmId().equals("firm-A"));
+        assertThat(queue.isEmpty()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should handle empty and edge-case single item tenant rotations without IndexOutOfBoundsException")
+    void shouldHandleTenantDrainEdgeCases() {
+        FairTenantQueue queue = new FairTenantQueue(1);
+
+        queue.enqueue(new EngagementReference("eng-1", "firm-X", "prod-1", "temp-1", "v1.0", "US", Set.of()));
+        queue.enqueue(new EngagementReference("eng-2", "firm-Y", "prod-1", "temp-1", "v1.0", "US", Set.of()));
+
+        // Poll one item at a time
+        List<EngagementReference> first = queue.pollFairBatch(1);
+        assertThat(first).hasSize(1);
+        assertThat(first.get(0).firmId()).isEqualTo("firm-X");
+
+        List<EngagementReference> second = queue.pollFairBatch(1);
+        assertThat(second).hasSize(1);
+        assertThat(second.get(0).firmId()).isEqualTo("firm-Y");
+
+        assertThat(queue.isEmpty()).isTrue();
+        assertThat(queue.pollFairBatch(1)).isEmpty();
     }
 }
