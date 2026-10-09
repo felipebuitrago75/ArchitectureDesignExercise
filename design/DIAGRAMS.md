@@ -53,8 +53,8 @@ flowchart TB
     end
 
     subgraph ClientLayer["Auditor Web Application"]
-        Auditor["CPA / Audit Senior"] -->|"1. Load Dashboard (< 10 ms)"| API["Regional GraphQL / REST API"]
-        API -->|"O(1) Indexed Query"| EMI
+        Auditor["CPA / Audit Senior"] -->|"1. Load dashboard"| API["Regional GraphQL / REST API"]
+        API -->|"Indexed query"| EMI
         Auditor -->|2. Inspect Pending Summary| S3W
         Auditor -->|3. Accept or Decline| EMS
         EMS -->|Record SHA-256 Decision Snapshot| AUDIT
@@ -125,9 +125,9 @@ sequenceDiagram
     Pod-->>Worker: Return (templateId, version)
     Worker->>EMI: Persist Metadata
 
-    Note over Auditor,Central: Phase 3: Instant Dashboard Reads (< 10 ms)
-    Auditor->>EMI: Query Engagements with Pending Updates
-    EMI-->>Auditor: Instant List (< 8 ms)
+    Note over Auditor,Central: Phase 3: Dashboard reads from the index
+    Auditor->>EMI: Query engagements with pending updates
+    EMI-->>Auditor: List of pending updates
     Auditor->>Central: Fetch Immutable Summary by SHA-256 Hash
     Central-->>Auditor: Return Human-Readable Audit Summary
 ```
@@ -144,7 +144,7 @@ flowchart LR
         E3["Firm C (15 files)"]
     end
 
-    subgraph Scheduler["FairTenantQueue (DRR Round-Robin)"]
+    subgraph Scheduler["FairTenantQueue (round-robin per firm)"]
         Q1["Queue: Firm A"]
         Q2["Queue: Firm B"]
         Q3["Queue: Firm C"]
